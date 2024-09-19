@@ -46,7 +46,7 @@ export default function Home() {
 
     const formSchema = z.object({
         existingalbum: z.object({
-            id: albumMode != "existingalbum" ? z.coerce.number().optional() : z.coerce.number(),
+            id: albumMode == "existingalbum" ? z.coerce.number() : z.coerce.number().optional(),
         }),
         newalbum: z.object({
             title: albumMode == 'newalbum' ? z.string().min(2).max(50) : z.string().optional(),
@@ -143,14 +143,16 @@ export default function Home() {
 
         console.log("Enviado")
 
-        await fetch('/api/upload/', {
-            method: 'POST',
-            body: formData,
-            cache: 'default',
-        }).then(async (res) => {
-            console.log("Recebido")
-            console.log(await res.json())
-        })
+        // await fetch('/api/upload/', {
+        //     method: 'POST',
+        //     body: formData,
+        //     cache: 'default',
+        // }).then(async (res) => {
+        //     console.log("Recebido")
+        //     console.log(await res.json())
+        // })
+
+        console.log(requestBody)
     }
 
     const handleChange = async (file) => {
