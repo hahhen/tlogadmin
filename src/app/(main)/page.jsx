@@ -181,7 +181,7 @@ export default function Home() {
                     <DialogHeader>
                         <DialogTitle>Instructions</DialogTitle>
                         <DialogDescription>
-                            <p className='mb-2'>If this is here it's because I'm lazy (yazy)</p>
+                            <p className='mb-2'>If this is here it&apos;s because I&apos;m lazy (yazy)</p>
                             <ol>
                                 <li>1. Add all the tracks</li>
                                 <li>2. After that do stuff in whatever order: fill the info for each track and for a new album or select an existing one</li>

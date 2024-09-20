@@ -69,20 +69,20 @@ export async function POST(request) {
                 return Response.json({ error: error.message }, { status: 400 });
             }
 
-            Promise.all(tracks.map(async (track) => {
-                const trackArrayBuffer = await track.file.arrayBuffer()
-                const { data: uploadedTrack, error: error2 } = await supabase.storage.from("tlog").upload(`${album.slug}/${track.file.name}`, trackArrayBuffer, { upsert: false, contentType: track.file.type })
-                if (error2) {
-                    return Response.json({ error: error2.message }, { status: 400 });
-                }
+                Promise.all(tracks.map(async (track) => {
+                    const trackArrayBuffer = await track.file.arrayBuffer()
+                    const { data: uploadedTrack, error: error2 } = await supabase.storage.from("tlog").upload(`${album.slug}/${track.file.name}`, trackArrayBuffer, { upsert: false, contentType: track.file.type })
+                    if (error2) {
+                        return Response.json({ error: error2.message }, { status: 400 });
+                    }
 
-                const { data: trackurl } = await supabase.storage.from("tlog").getPublicUrl(uploadedTrack.path)
+                    const { data: trackurl } = await supabase.storage.from("tlog").getPublicUrl(uploadedTrack.path)
 
-                const { data: insertedTrack, error: error3 } = await supabase.from("song").insert({ title: track.title, albumid: album.id, track_number: track.track_number, url: trackurl.publicUrl }).select()
-                if (error3) {
-                    return Response.json({ error: error3.message }, { status: 400 });
-                }
-            }))
+                    const { data: insertedTrack, error: error3 } = await supabase.from("song").insert({ title: track.title, albumid: album.id, track_number: track.track_number, url: trackurl.publicUrl }).select()
+                    if (error3) {
+                        return Response.json({ error: error3.message }, { status: 400 });
+                    }
+                }))
         }
         catch (error) {
             return Response.json({ error: error.message }, { status: 400 });
