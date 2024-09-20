@@ -31,13 +31,13 @@ import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 // export const tracksAtom = atom([null])
 
 export default function Home() {
     const supabase = createClient()
     const [tracks, setTracks] = useState([null])
-    const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
     const [defaultValues, setDefaultValues] = useState({})
     const [albumMode, setAlbumMode] = useState('newalbum');
@@ -71,15 +71,6 @@ export default function Home() {
         ),
     })
 
-    const fetchUser = async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-            setError(error.message);
-        } else {
-            setUser(data);
-        }
-    };
-
     const fetchAlbums = async () => {
         const { data, error } = await supabase.from('album').select('*');
         if (error) {
@@ -90,17 +81,20 @@ export default function Home() {
     };
 
     useEffect(() => {
-        fetchUser();
         fetchAlbums();
     }, [])
 
 
     const form = useForm({
+
         resolver: zodResolver(formSchema),
         defaultValues: defaultValues,
     })
     useEffect(() => {
         setDefaultValues({
+            existingalbum: {
+                id: null,
+            },
             tracks: tracks.slice(1).map((track, index) => ({
                 title: track.name,
                 track_number: index + 1,
@@ -116,7 +110,18 @@ export default function Home() {
     // 2. Define a submit handler.
     async function onSubmit(values) {
         const requestBody = {
-            newalbum: albumMode == "newalbum" ? values.newalbum : null,
+            newalbum: albumMode == "newalbum" ?
+                {
+                    title: values.newalbum.title,
+                    cover: values.newalbum.cover[0],
+                    folder_icon: values.newalbum.folder_icon.length > 0 ? values.newalbum.folder_icon[0] : null,
+                    video: values.newalbum.video ? values.newalbum.video : null,
+                } : {
+                    title: null,
+                    cover: null,
+                    folder_icon: null,
+                    video: null,
+                },
             existingalbum: albumMode == "existingalbum" ?
                 values.existingalbum
                 :
@@ -132,27 +137,30 @@ export default function Home() {
         const formData = new FormData();
 
         formData.append('newalbum[title]', requestBody.newalbum.title);
-        formData.append('newalbum[cover]', requestBody.newalbum.cover[0]);
+        formData.append('newalbum[cover]', requestBody.newalbum.cover);
+        formData.append('newalbum[folder_icon]', requestBody.newalbum.folder_icon);
+        formData.append('newalbum[video]', requestBody.newalbum.video);
 
         formData.append('existingalbum[id]', requestBody.existingalbum.id);
+
         requestBody.tracks.forEach((track, index) => {
             formData.append(`tracks[${index}][title]`, track.title);
             formData.append(`tracks[${index}][track_number]`, track.track_number);
             formData.append(`tracks[${index}][file]`, track.file);
         });
 
-        console.log("Enviado")
+        toast("Uploading. Do not leave the page. This might take some time")
 
-        // await fetch('/api/upload/', {
-        //     method: 'POST',
-        //     body: formData,
-        //     cache: 'default',
-        // }).then(async (res) => {
-        //     console.log("Recebido")
-        //     console.log(await res.json())
-        // })
+        await fetch('/api/upload/', {
+            method: 'POST',
+            body: formData,
+            cache: 'default',
+        }).then(async (res) => {
+            console.log("Recebido")
+            console.log(await res.json())
+        })
 
-        console.log(requestBody)
+        toast("Uploaded successfully", { type: "success" })
     }
 
     const handleChange = async (file) => {
@@ -166,8 +174,23 @@ export default function Home() {
     const fileRef = form.register("newalbum.cover");
     const file2Ref = form.register("newalbum.folder_icon");
     return (
-        <main className="flex w-full flex-col items-center justify-between py-4 px-2">
-            <p className='text-sm border rounded-md p-2 mb-2'>Logged in as {user?.user?.email}</p>
+        <main className="flex w-full gap-4 flex-col items-center justify-between py-4 px-2">
+            <Dialog>
+                <DialogTrigger asChild><Button>Instructions</Button></DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Instructions</DialogTitle>
+                        <DialogDescription>
+                            <p className='mb-2'>If this is here it's because I'm lazy (yazy)</p>
+                            <ol>
+                                <li>1. Add all the tracks</li>
+                                <li>2. After that do stuff in whatever order: fill the info for each track and for a new album or select an existing one</li>
+                            </ol>
+                            <p className='mt-2'>This is a bug, so I might fix it, but, basically, every track you add resets the form. If already filled everything and added another track, you can just put in a space and delete for each field, that will update the form accordingly.</p>
+                        </DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
             <div className="container px-4 max-w-5xl mx-auto">
                 {tracks.length > 1 &&
                     <Form {...form}>
@@ -233,7 +256,7 @@ export default function Home() {
                                                     <FormItem>
                                                         <FormLabel>Video (optional)</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Album title" {...field} />
+                                                            <Input placeholder="YT link or contact Hahhen for AWS" {...field} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -249,7 +272,9 @@ export default function Home() {
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Album</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <Select onValueChange={(value) => {
+                                                        field.onChange(value)
+                                                    }} defaultValue={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="w-[180px]">
                                                                 <SelectValue placeholder="Select an album" />
@@ -264,6 +289,7 @@ export default function Home() {
                                                         </SelectContent>
                                                     </Select>
                                                     <FormDescription>Select an existing album</FormDescription>
+                                                    <FormMessage />
                                                 </FormItem>
                                             )}
                                         />

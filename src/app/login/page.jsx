@@ -12,7 +12,6 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password:</Label>
                 <Input id="password" name="password" type="password" required />
                 <Button formAction={login}>Log in</Button>
-                <Button formAction={signup}>Sign up</Button>
             </form>
         </main>
     )
